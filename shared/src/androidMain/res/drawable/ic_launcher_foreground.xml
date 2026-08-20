@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    MyTime Productivity
+    Copyright (C) 2025 Adrian Cotfas
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="379"
+    android:viewportHeight="379">
+  <group
+      android:name="launcher_foreground"
+      android:pivotX="189.5"
+      android:pivotY="189.5"
+      android:scaleX="0.45"
+      android:scaleY="0.45">
+    <path
+        android:pathData="M 84.9,56.1 L 294.1,56.1 C 268.9,130.8 214.8,171.1 189.5,189.5 C 214.8,207.9 268.9,248.2 294.1,322.9 L 84.9,322.9 C 110.2,248.2 164.2,207.9 189.5,189.5 C 164.2,171.1 110.2,130.8 84.9,56.1 Z"
+        android:strokeWidth="30"
+        android:strokeColor="#FF6CE5B1"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+  </group>
+</vector>
