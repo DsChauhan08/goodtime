@@ -1,11 +1,11 @@
-name: Release
+name: Google Play Release
 
-# Publishes the Google-flavor AAB to the Play beta track when a version tag is pushed.
+# Publishes the Google-flavor AAB to the Play beta track when a play-* version tag is pushed.
 # Can also be run manually against a tag that already exists: the workflow definition comes
 # from the default branch, the source that gets built comes from the tag.
 on:
   push:
-    tags: ['*.*.*']
+    tags: ['play-*.*.*']
   workflow_dispatch:
     inputs:
       tag:

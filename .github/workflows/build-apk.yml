@@ -1,14 +1,15 @@
-name: Build APK
+name: Build APK & Release
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
     inputs:
       flavor:
-        description: 'Product flavor to build (google, fdroid, or all)'
+        description: 'Flavor to build (google, fdroid, or all)'
         required: true
         default: 'all'
         type: choice
@@ -24,6 +25,16 @@ on:
         options:
           - release
           - debug
+      create_release:
+        description: 'Create or update GitHub Release with APKs'
+        required: false
+        default: true
+        type: boolean
+      tag_name:
+        description: 'Release tag (default: v3.2.6)'
+        required: false
+        default: 'v3.2.6'
+        type: string
 
 concurrency:
   group: build-apk-${{ github.workflow }}-${{ github.ref }}
@@ -31,7 +42,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build APK (ARM & Universal)
+    name: Build & Release APKs
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -39,6 +50,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -54,9 +67,12 @@ jobs:
 
       - name: Build APKs
         run: |
+          set -euo pipefail
           FLAVOR="${{ inputs.flavor || 'all' }}"
           BUILD_TYPE="${{ inputs.build_type || 'release' }}"
           BUILD_TYPE_CAP="$(tr '[:lower:]' '[:upper:]' <<< ${BUILD_TYPE:0:1})${BUILD_TYPE:1}"
+
+          echo "Building flavor: $FLAVOR, type: $BUILD_TYPE_CAP"
 
           if [ "$FLAVOR" = "all" ]; then
             ./gradlew :androidApp:assembleGoogle${BUILD_TYPE_CAP} :androidApp:assembleFdroid${BUILD_TYPE_CAP}
@@ -68,22 +84,39 @@ jobs:
 
       - name: Organize APK Artifacts
         run: |
-          mkdir -p apk-artifacts
-          
-          # Find all generated APKs and copy them with user-friendly names
-          find androidApp/build/outputs/apk -type f -name "*.apk" | while read -r apk; do
-            filename=$(basename "$apk")
-            echo "Processing $apk"
-            clean_name=$(echo "$filename" | sed 's/^androidApp-/MyTime-/')
-            cp "$apk" "apk-artifacts/$clean_name"
-          done
-          
-          echo "=== Artifacts ready for download ==="
-          ls -lh apk-artifacts/
+          set -euo pipefail
+          mkdir -p release-apks
 
-      - name: Upload APKs
+          VERSION_NAME=$(grep '^app-version-name' gradle/libs.versions.toml | cut -d'"' -f2)
+          echo "Detected version name: $VERSION_NAME"
+
+          find androidApp/build/outputs/apk -type f -name "*.apk" | while read -r apk_path; do
+            base_name=$(basename "$apk_path")
+            echo "Processing APK: $apk_path ($base_name)"
+            target_name=$(echo "$base_name" | sed "s/^androidApp-/MyTime-v${VERSION_NAME}-/")
+            cp "$apk_path" "release-apks/$target_name"
+            echo "Created: release-apks/$target_name"
+          done
+
+          echo "=== Summary of built APKs ==="
+          ls -lh release-apks/
+
+      - name: Upload Artifacts (Download from Action run)
         uses: actions/upload-artifact@v4
         with:
           name: MyTime-APKs
-          path: apk-artifacts/*.apk
+          path: release-apks/*.apk
           retention-days: 30
+
+      - name: Create or Update GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.create_release == true) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.tag_name || 'v3.2.6' }}
+          name: "MyTime ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.tag_name || 'v3.2.6' }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: release-apks/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
