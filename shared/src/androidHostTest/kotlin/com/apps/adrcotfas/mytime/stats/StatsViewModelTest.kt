@@ -146,25 +146,24 @@ class StatsViewModelTest {
 
     @Test
     fun `Select label A and delete all`() = runTest {
-        retryTest {
-            viewModel.setSelectedLabels(listOf("A"))
-            delay(10.milliseconds)
-            val selected = viewModel.uiState.value.selectedLabels
-            assertEquals(selected, listOf("A"))
-            var sessions = viewModel.pagedSessions.asSnapshot()
+        viewModel.setSelectedLabels(listOf("A"))
+        advanceUntilIdle()
+        val selected = viewModel.uiState.value.selectedLabels
+        assertEquals(selected, listOf("A"))
+        var sessions = viewModel.pagedSessions.asSnapshot()
 
-            assertTrue { sessions.size == 3 }
-            viewModel.selectAllSessions(sessions.size)
-            viewModel.deleteSelectedSessions()
-            advanceUntilIdle()
-            sessions = viewModel.pagedSessions.asSnapshot()
-            assertTrue { sessions.isEmpty() }
+        assertTrue { sessions.size == 3 }
+        viewModel.selectAllSessions(sessions.size)
+        viewModel.deleteSelectedSessions()
+        advanceUntilIdle()
+        sessions = viewModel.pagedSessions.asSnapshot()
+        assertTrue { sessions.isEmpty() }
 
-            viewModel.setSelectedLabels(listOf("A", "B", "C"))
-            sessions = viewModel.pagedSessions.asSnapshot()
-            assertTrue { sessions.firstOrNull { it.label == "A" } == null }
-            assertTrue { sessions.size == 6 }
-        }
+        viewModel.setSelectedLabels(listOf("A", "B", "C"))
+        advanceUntilIdle()
+        sessions = viewModel.pagedSessions.asSnapshot()
+        assertTrue { sessions.firstOrNull { it.label == "A" } == null }
+        assertTrue { sessions.size == 6 }
     }
 
     @Test
