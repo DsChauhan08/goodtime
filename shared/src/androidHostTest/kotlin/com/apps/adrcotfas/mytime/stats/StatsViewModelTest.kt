@@ -146,24 +146,33 @@ class StatsViewModelTest {
 
     @Test
     fun `Select label A and delete all`() = runTest {
-        viewModel.setSelectedLabels(listOf("A"))
-        advanceUntilIdle()
-        val selected = viewModel.uiState.value.selectedLabels
-        assertEquals(selected, listOf("A"))
-        var sessions = viewModel.pagedSessions.asSnapshot()
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.labels.isEmpty()) state = awaitItem()
 
-        assertTrue { sessions.size == 3 }
-        viewModel.selectAllSessions(sessions.size)
-        viewModel.deleteSelectedSessions()
-        advanceUntilIdle()
-        sessions = viewModel.pagedSessions.asSnapshot()
-        assertTrue { sessions.isEmpty() }
+            viewModel.setSelectedLabels(listOf("A"))
+            state = awaitItem()
+            while (state.selectedLabels != listOf("A")) state = awaitItem()
+            assertEquals(listOf("A"), state.selectedLabels)
 
-        viewModel.setSelectedLabels(listOf("A", "B", "C"))
-        advanceUntilIdle()
-        sessions = viewModel.pagedSessions.asSnapshot()
-        assertTrue { sessions.firstOrNull { it.label == "A" } == null }
-        assertTrue { sessions.size == 6 }
+            var sessions = viewModel.pagedSessions.asSnapshot()
+            assertTrue { sessions.size == 3 }
+            viewModel.selectAllSessions(sessions.size)
+            viewModel.deleteSelectedSessions()
+            advanceUntilIdle()
+            sessions = viewModel.pagedSessions.asSnapshot()
+            assertTrue { sessions.isEmpty() }
+
+            viewModel.setSelectedLabels(listOf("A", "B", "C"))
+            state = awaitItem()
+            while (state.selectedLabels != listOf("A", "B", "C")) state = awaitItem()
+
+            sessions = viewModel.pagedSessions.asSnapshot()
+            assertTrue { sessions.firstOrNull { it.label == "A" } == null }
+            assertTrue { sessions.size == 6 }
+
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
