@@ -51,6 +51,20 @@ class AndroidSoundPlayer(
     companion object {
         private const val SET_LOOPING_METHOD_NAME = "setLooping"
         private const val SET_VOLUME_METHOD_NAME = "setVolume"
+
+        private val HEADPHONE_DEVICE_TYPES: Set<Int> = buildSet {
+            add(AudioDeviceInfo.TYPE_WIRED_HEADPHONES)
+            add(AudioDeviceInfo.TYPE_WIRED_HEADSET)
+            add(AudioDeviceInfo.TYPE_USB_DEVICE)
+            add(AudioDeviceInfo.TYPE_USB_HEADSET)
+            add(AudioDeviceInfo.TYPE_BLUETOOTH_A2DP)
+            add(AudioDeviceInfo.TYPE_BLUETOOTH_SCO)
+            add(AudioDeviceInfo.TYPE_HEARING_AID)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                add(AudioDeviceInfo.TYPE_BLE_HEADSET)
+                add(AudioDeviceInfo.TYPE_BLE_SPEAKER)
+            }
+        }
     }
 
     private var job: Job? = null
@@ -333,20 +347,8 @@ class AndroidSoundPlayer(
 
     private fun areHeadphonesPluggedIn(audioManager: AudioManager): Boolean {
         val audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-        val list =
-            mutableListOf(
-                AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-                AudioDeviceInfo.TYPE_WIRED_HEADSET,
-                AudioDeviceInfo.TYPE_USB_DEVICE,
-                AudioDeviceInfo.TYPE_USB_HEADSET,
-                AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
-            )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            list.add(AudioDeviceInfo.TYPE_BLE_HEADSET)
-            list.add(AudioDeviceInfo.TYPE_BLE_SPEAKER)
-        }
         return audioDevices.any { deviceInfo ->
-            list.contains(deviceInfo.type)
+            deviceInfo.type in HEADPHONE_DEVICE_TYPES
         }
     }
 

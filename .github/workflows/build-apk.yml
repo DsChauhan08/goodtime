@@ -9,14 +9,14 @@ on:
   workflow_dispatch:
     inputs:
       flavor:
-        description: 'Flavor to build (google, fdroid, or all)'
+        description: 'Flavor to build (fdroid, google, or all)'
         required: true
-        default: 'all'
+        default: 'fdroid'
         type: choice
         options:
-          - all
-          - google
           - fdroid
+          - google
+          - all
       build_type:
         description: 'Build type (release or debug)'
         required: true
@@ -31,9 +31,9 @@ on:
         default: true
         type: boolean
       tag_name:
-        description: 'Release tag (default: v3.2.6)'
+        description: 'Release tag (default: v3.2.7)'
         required: false
-        default: 'v3.2.6'
+        default: 'v3.2.7'
         type: string
 
 concurrency:
@@ -65,10 +65,27 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Write signing secrets (if configured)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > release-keystore.jks
+            echo "RELEASE_STORE_FILE=release-keystore.jks" >> "$GITHUB_ENV"
+            echo "Keystore decoded successfully"
+          else
+            echo "No RELEASE_KEYSTORE_BASE64 configured, signing with debug key"
+          fi
+
       - name: Build APKs
+        env:
+          RELEASE_STORE_FILE: ${{ env.RELEASE_STORE_FILE || '' }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          FLAVOR="${{ inputs.flavor || 'all' }}"
+          FLAVOR="${{ inputs.flavor || 'fdroid' }}"
           BUILD_TYPE="${{ inputs.build_type || 'release' }}"
           BUILD_TYPE_CAP="$(tr '[:lower:]' '[:upper:]' <<< ${BUILD_TYPE:0:1})${BUILD_TYPE:1}"
 
@@ -78,7 +95,7 @@ jobs:
             ./gradlew :androidApp:assembleGoogle${BUILD_TYPE_CAP} :androidApp:assembleFdroid${BUILD_TYPE_CAP}
           elif [ "$FLAVOR" = "google" ]; then
             ./gradlew :androidApp:assembleGoogle${BUILD_TYPE_CAP}
-          elif [ "$FLAVOR" = "fdroid" ]; then
+          else
             ./gradlew :androidApp:assembleFdroid${BUILD_TYPE_CAP}
           fi
 
@@ -88,15 +105,25 @@ jobs:
           mkdir -p release-apks
 
           VERSION_NAME=$(grep '^app-version-name' gradle/libs.versions.toml | cut -d'"' -f2)
-          echo "Detected version name: $VERSION_NAME"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          BUILD_TYPE="${{ inputs.build_type || 'release' }}"
+          echo "Detected version name: $VERSION_NAME, build type: $BUILD_TYPE"
 
-          find androidApp/build/outputs/apk -type f -name "*.apk" | while read -r apk_path; do
-            base_name=$(basename "$apk_path")
-            echo "Processing APK: $apk_path ($base_name)"
-            target_name=$(echo "$base_name" | sed "s/^androidApp-/MyTime-v${VERSION_NAME}-/")
-            cp "$apk_path" "release-apks/$target_name"
-            echo "Created: release-apks/$target_name"
-          done
+          # Single good APK for fdroid: MyTime-v<version>.apk
+          if [ -f "androidApp/build/outputs/apk/fdroid/${BUILD_TYPE}/androidApp-fdroid-${BUILD_TYPE}.apk" ]; then
+            cp "androidApp/build/outputs/apk/fdroid/${BUILD_TYPE}/androidApp-fdroid-${BUILD_TYPE}.apk" "release-apks/MyTime-v${VERSION_NAME}.apk"
+            echo "Created: release-apks/MyTime-v${VERSION_NAME}.apk"
+          fi
+
+          # Google flavor if built: MyTime-v<version>-google.apk
+          if [ -f "androidApp/build/outputs/apk/google/${BUILD_TYPE}/androidApp-google-${BUILD_TYPE}.apk" ]; then
+            suffix="-google"
+            if [ ! -f "release-apks/MyTime-v${VERSION_NAME}.apk" ]; then
+              suffix=""
+            fi
+            cp "androidApp/build/outputs/apk/google/${BUILD_TYPE}/androidApp-google-${BUILD_TYPE}.apk" "release-apks/MyTime-v${VERSION_NAME}${suffix}.apk"
+            echo "Created: release-apks/MyTime-v${VERSION_NAME}${suffix}.apk"
+          fi
 
           echo "=== Summary of built APKs ==="
           ls -lh release-apks/
@@ -112,8 +139,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.create_release == true) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.tag_name || 'v3.2.6' }}
-          name: "MyTime ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.tag_name || 'v3.2.6' }}"
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.tag_name || format('v{0}', env.VERSION_NAME) }}
+          name: "MyTime ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.tag_name || format('v{0}', env.VERSION_NAME) }}"
           draft: false
           prerelease: false
           generate_release_notes: true

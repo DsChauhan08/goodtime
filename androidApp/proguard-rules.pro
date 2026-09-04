@@ -31,3 +31,25 @@
 -dontwarn javax.naming.**
 -dontwarn org.ietf.jgss.**
 -dontwarn org.apache.http.**
+
+# ===== Kotlinx Serialization =====
+-keepattributes *Annotation*,InnerClasses
+-dontnote kotlinx.serialization.SerializationKt
+-keepclassmembers class * {
+    *** Companion;
+}
+-keepclasseswithmembers class * {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclassmembers class **$serializer {
+    public static final **$serializer INSTANCE;
+}
+-keepclassmembers @kotlinx.serialization.Serializable class * {
+    private <fields>;
+    <fields>;
+}
+
+# ===== Koin / ViewModel reflection =====
+-keepclassmembers class * extends androidx.lifecycle.ViewModel {
+    <init>(...);
+}

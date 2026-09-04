@@ -36,8 +36,8 @@ object TimeUtils {
         val hours = totalSeconds / 3600
         val minutes = (totalSeconds % 3600) / 60
         val seconds = totalSeconds % 60
-        val minutesString = minutes.toString().padStart(2, '0')
-        val secondsString = seconds.toString().padStart(2, '0')
+        val minutesString = if (minutes < 10) "0$minutes" else minutes.toString()
+        val secondsString = if (seconds < 10) "0$seconds" else seconds.toString()
         return when {
             minutesOnly && hours > 0 -> "$hours:$minutesString"
             minutesOnly -> minutesString

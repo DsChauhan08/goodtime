@@ -19,6 +19,7 @@ package com.apps.adrcotfas.mytime.ui
 
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -31,7 +32,10 @@ import mytime_productivity.shared.generated.resources.roboto_mono
 import org.jetbrains.compose.resources.Font
 
 @Composable
-fun bodyFontFamily() = FontFamily(Font(Res.font.open_sans))
+fun bodyFontFamily(): FontFamily {
+    val font = Font(Res.font.open_sans)
+    return remember(font) { FontFamily(font) }
+}
 
 val baseline = Typography()
 
@@ -73,7 +77,14 @@ fun timerFontWith(
 val timerFontWeights = listOf(100, 200, 300)
 
 @Composable
-fun timerFontRobotoMap(): Map<Int, FontFamily> = timerFontWeights.associateWith { weight -> timerFontWith(Res.font.roboto_mono, weight) }
+fun timerFontRobotoMap(): Map<Int, FontFamily> {
+    val font100 = timerFontWith(Res.font.roboto_mono, 100)
+    val font200 = timerFontWith(Res.font.roboto_mono, 200)
+    val font300 = timerFontWith(Res.font.roboto_mono, 300)
+    return remember(font100, font200, font300) {
+        mapOf(100 to font100, 200 to font200, 300 to font300)
+    }
+}
 
 @Composable
 fun timerTextRobotoStyle(): TextStyle {

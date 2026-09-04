@@ -464,15 +464,25 @@ fun TimerTextView(
     }
 
     val clickableModifier =
-        onClick?.let {
-            Modifier.combinedClickable(
-                indication = null,
-                interactionSource = null,
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
-        } ?: Modifier
+        remember(onClick, onLongClick) {
+            onClick?.let {
+                Modifier.combinedClickable(
+                    indication = null,
+                    interactionSource = null,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                )
+            } ?: Modifier
+        }
     val text = millis().formatMilliseconds(timerStyle.minutesOnly)
+    val textStyle =
+        remember(timerStyle.fontWeight, timerStyle.fontSize, color, text.length) {
+            TextStyle(
+                fontSize = timerStyle.inUseFontSize().em * (5f / maxOf(text.length, 5)),
+                fontFamily = fontMap[timerStyle.fontWeight],
+                color = color,
+            )
+        }
     Text(
         modifier =
         Modifier
@@ -486,14 +496,7 @@ fun TimerTextView(
             }
             .then(clickableModifier),
         text = text,
-        style =
-        TextStyle(
-            // the font is monospace and the size was calibrated for 5 chars ("90:00");
-            // shrink proportionally when hours push the text past that
-            fontSize = timerStyle.inUseFontSize().em * (5f / maxOf(text.length, 5)),
-            fontFamily = fontMap[timerStyle.fontWeight],
-            color = color,
-        ),
+        style = textStyle,
     )
 }
 

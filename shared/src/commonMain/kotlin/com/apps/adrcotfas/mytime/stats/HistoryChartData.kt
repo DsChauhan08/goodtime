@@ -128,72 +128,51 @@ fun computeHistoryChartData(
         }
 
     // timestamp to (label to duration)
-    val intermediateData = mutableMapOf<LocalDate, Map<String, Long>>()
+    val intermediateData = mutableMapOf<LocalDate, MutableMap<String, Long>>()
 
     // Initialize the data with zeros to default label
     var tmpDate = iterationData.intervalStart
+    val initialLabels = if (aggregate) listOf(Label.DEFAULT_LABEL_NAME) else labels
     repeat(iterationData.intervalLength + 1) {
-        intermediateData[tmpDate] =
-            (if (aggregate) listOf(Label.DEFAULT_LABEL_NAME) else labels).associateWith { 0L }
+        intermediateData[tmpDate] = initialLabels.associateWithTo(mutableMapOf()) { 0L }
         tmpDate = tmpDate.plus(iterationData.step)
     }
 
-    sessions
-        .asSequence()
-        .map {
-            val timestamp = it.timestamp
-            PreProcessingSession(
-                label = it.label,
-                timestamp = timestamp,
-                dateTime = toLocalDateTime(timestamp),
-                adjustedDateTime = toLocalDateTime(timestamp - workDayStart.seconds.inWholeMilliseconds),
-                duration = it.duration,
-                isWork = it.isWork,
-            )
-        }.forEach { session ->
-            val date = session.adjustedDateTime.date
-            val label = if (aggregate) Label.DEFAULT_LABEL_NAME else session.label
+    val workDayStartMillis = workDayStart.seconds.inWholeMilliseconds
+    for (session in sessions) {
+        if (!session.isWork) continue
+        val date = toLocalDateTime(session.timestamp - workDayStartMillis).date
+        val label = if (aggregate) Label.DEFAULT_LABEL_NAME else session.label
 
-            if (session.isWork) {
-                val dateToConsider =
-                    when (type) {
-                        HistoryIntervalType.DAYS -> date
-                        HistoryIntervalType.WEEKS -> date.firstDayOfWeekInThisWeek(firstDayOfWeek)
-                        HistoryIntervalType.MONTHS -> LocalDate(date.year, date.month, 1)
-                        HistoryIntervalType.QUARTERS -> date.firstDayOfThisQuarter()
-                        HistoryIntervalType.YEARS -> LocalDate(date.year, 1, 1)
-                    }
-
-                if (dateToConsider in intermediateData.keys) {
-                    val innerMap =
-                        intermediateData
-                            .getOrElse(dateToConsider) { mutableMapOf(label to 0L) }
-                            .toMutableMap()
-                    innerMap[label] =
-                        innerMap.getOrElse(label) { 0L } + if (overviewType == OverviewType.TIME) session.duration else 1
-                    intermediateData[dateToConsider] = innerMap
-                }
+        val dateToConsider =
+            when (type) {
+                HistoryIntervalType.DAYS -> date
+                HistoryIntervalType.WEEKS -> date.firstDayOfWeekInThisWeek(firstDayOfWeek)
+                HistoryIntervalType.MONTHS -> LocalDate(date.year, date.month, 1)
+                HistoryIntervalType.QUARTERS -> date.firstDayOfThisQuarter()
+                HistoryIntervalType.YEARS -> LocalDate(date.year, 1, 1)
             }
+
+        val innerMap = intermediateData[dateToConsider]
+        if (innerMap != null) {
+            val delta = if (overviewType == OverviewType.TIME) session.duration else 1L
+            innerMap[label] = (innerMap[label] ?: 0L) + delta
         }
-    // Aggregate data if needed
-    intermediateData.forEach {
-        val aggregatedData = aggregateDataIfNeeded(it.value)
-        intermediateData[it.key] = aggregatedData
     }
 
-    // prepare data structures ready for the chart
-    val x = mutableListOf<Long>()
-    val y = mutableMapOf<String, List<Long>>()
+    // Aggregate data if needed
+    val aggregatedIntermediateData = intermediateData.mapValues { aggregateDataIfNeeded(it.value) }
 
-    val emptyList = List(iterationData.intervalLength + 1) { 0L }
-    intermediateData.asIterable().forEachIndexed { index, entry ->
+    // prepare data structures ready for the chart
+    val numIntervals = iterationData.intervalLength + 1
+    val x = ArrayList<Long>(numIntervals)
+    val y = mutableMapOf<String, MutableList<Long>>()
+
+    aggregatedIntermediateData.asIterable().forEachIndexed { index, entry ->
         x.add(entry.key.toEpochMilliseconds())
 
         entry.value.forEach { (label, duration) ->
-            y[label] =
-                (y[label] ?: emptyList).toMutableList().apply {
-                    this[index] = duration
-                }
+            y.getOrPut(label) { MutableList(numIntervals) { 0L } }[index] = duration
         }
     }
 
