@@ -11,7 +11,7 @@ val keystoreProps =
 fun signingValue(
     propKey: String,
     envKey: String,
-): String? = keystoreProps.getProperty(propKey) ?: System.getenv(envKey)
+): String? = (keystoreProps.getProperty(propKey) ?: System.getenv(envKey))?.takeIf { it.isNotBlank() }
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -74,7 +74,8 @@ android {
         }
     }
 
-    val storeFilePath = signingValue("storeFile", "RELEASE_STORE_FILE")
+    val storeFilePath =
+        signingValue("storeFile", "RELEASE_STORE_FILE")?.takeIf { rootProject.file(it).exists() }
     signingConfigs {
         getByName("debug") {
             enableV1Signing = true
