@@ -36,21 +36,21 @@ class AlarmReceiver :
     private val timerManager: TimerManager by inject()
     private val coroutineScope: CoroutineScope by inject(named(MAIN_SCOPE))
 
-    @Suppress("DEPRECATION")
     override fun onReceive(
         context: Context,
         intent: Intent,
     ) {
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-        powerManager
-            .newWakeLock(
-                PowerManager.ACQUIRE_CAUSES_WAKEUP
-                    or PowerManager.ON_AFTER_RELEASE
-                    or PowerManager.SCREEN_BRIGHT_WAKE_LOCK,
-                "MyTime:AlarmReceiver",
-            ).apply {
-                acquire(10.seconds.inWholeMilliseconds)
-            }
+        val wakeLock =
+            powerManager
+                .newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK
+                        or PowerManager.ACQUIRE_CAUSES_WAKEUP
+                        or PowerManager.ON_AFTER_RELEASE,
+                    "MyTime:AlarmReceiver",
+                ).apply {
+                    acquire(10.seconds.inWholeMilliseconds)
+                }
         // On a cold start (process killed while the timer was running) the state
         // restoration runs asynchronously; acting before it lands would drop the session.
         val pendingResult = goAsync()
@@ -65,6 +65,12 @@ class AlarmReceiver :
                     timerManager.reset()
                 }
             } finally {
+                try {
+                    if (wakeLock.isHeld) {
+                        wakeLock.release()
+                    }
+                } catch (ignored: Exception) {
+                }
                 pendingResult.finish()
             }
         }

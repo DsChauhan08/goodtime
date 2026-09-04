@@ -21,6 +21,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import co.touchlab.kermit.Logger
 import com.apps.adrcotfas.mytime.bl.TimeUtils.formatMilliseconds
 
@@ -85,11 +86,29 @@ class AlarmManagerHandler(
 
     private fun setAlarm(triggerAtMillis: Long) {
         log.v { "Set alarm in ${(triggerAtMillis - timeProvider.elapsedRealtime()).formatMilliseconds()} from now" }
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            triggerAtMillis,
-            getAlarmPendingIntent(),
-        )
+        val pendingIntent = getAlarmPendingIntent()
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                    triggerAtMillis,
+                    pendingIntent,
+                )
+                return
+            }
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                triggerAtMillis,
+                pendingIntent,
+            )
+        } catch (e: SecurityException) {
+            log.w(e) { "Cannot schedule exact alarm; falling back to inexact alarm" }
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                triggerAtMillis,
+                pendingIntent,
+            )
+        }
     }
 
     private fun cancelAlarm() {

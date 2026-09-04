@@ -32,7 +32,7 @@
             android:showOnLockScreen="true"
             android:supportsPictureInPicture="true"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:exported="true">
+            android:exported="false">
         </activity>
         <activity-alias
             android:name="com.apps.adrcotfas.mytime.settings.MyTimeLauncherAlias"

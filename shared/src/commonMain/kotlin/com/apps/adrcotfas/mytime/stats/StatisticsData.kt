@@ -108,71 +108,63 @@ fun computeStatisticsData(
         }
 
     val oneYearAgoMillis = oneYearAgoLocalDate.toEpochMilliseconds()
+    val adjustedOffsetMillis = secondOfDay.seconds.inWholeMilliseconds
 
-    sessions
-        .asSequence()
-        .map {
-            val timestamp = it.timestamp
-            PreProcessingSession(
-                label = it.label,
-                timestamp = timestamp,
-                dateTime = toLocalDateTime(timestamp),
-                adjustedDateTime = toLocalDateTime(timestamp - secondOfDay.seconds.inWholeMilliseconds),
-                duration = it.duration,
-                isWork = it.isWork,
-            )
-        }.forEach { session ->
-            val date = session.adjustedDateTime.date
+    for (session in sessions) {
+        val timestamp = session.timestamp
+        val duration = session.duration
 
-            if (session.isWork) {
-                if (today - session.timestamp < oneYearAgoMillis) {
-                    heatmapData[date] = (heatmapData[date] ?: 0f) + session.duration
-                    maxHeatMapValue = maxOf(maxHeatMapValue, heatmapData[date] ?: 0f)
+        if (session.isWork) {
+            if (timestamp >= oneYearAgoMillis) {
+                val adjustedDateTime = toLocalDateTime(timestamp - adjustedOffsetMillis)
+                val date = adjustedDateTime.date
+                heatmapData[date] = (heatmapData[date] ?: 0f) + duration
+                maxHeatMapValue = maxOf(maxHeatMapValue, heatmapData[date] ?: 0f)
 
-                    val weight = calculateSessionWeight(session.timestamp, today)
+                val weight = calculateSessionWeight(timestamp, today)
 
-                    val currentSplitByHour = splitSessionByHour(session.dateTime, session.duration)
-                    currentSplitByHour.forEach { (hour, value) ->
-                        productiveHoursOfTheDay[hour] =
-                            (productiveHoursOfTheDay[hour] ?: 0f) + value * weight
-                    }
+                val currentSplitByHour = splitSessionByHour(toLocalDateTime(timestamp), duration)
+                currentSplitByHour.forEach { (hour, value) ->
+                    productiveHoursOfTheDay[hour] =
+                        (productiveHoursOfTheDay[hour] ?: 0f) + value * weight
                 }
-
-                if (session.timestamp >= today) {
-                    workToday += session.duration
-                    workTodayPerLabel[session.label] =
-                        (workTodayPerLabel[session.label] ?: 0L) + session.duration
-                    workSessionsToday++
-                }
-                if (session.timestamp >= startOfThisWeek) {
-                    workThisWeek += session.duration
-                    workThisWeekPerLabel[session.label] =
-                        (workThisWeekPerLabel[session.label] ?: 0L) + session.duration
-                    workSessionsThisWeek++
-                }
-                if (session.timestamp >= startOfThisMonth) {
-                    workThisMonth += session.duration
-                    workThisMonthPerLabel[session.label] =
-                        (workThisMonthPerLabel[session.label] ?: 0L) + session.duration
-                    workSessionsThisMonth++
-                }
-                workTotal += session.duration
-                workTotalPerLabel[session.label] =
-                    (workTotalPerLabel[session.label] ?: 0L) + session.duration
-                workSessionsTotal++
-            } else {
-                if (session.timestamp >= today) {
-                    breakToday += session.duration
-                }
-                if (session.timestamp >= startOfThisWeek) {
-                    breakThisWeek += session.duration
-                }
-                if (session.timestamp >= startOfThisMonth) {
-                    breakThisMonth += session.duration
-                }
-                breakTotal += session.duration
             }
+
+            if (timestamp >= today) {
+                workToday += duration
+                workTodayPerLabel[session.label] =
+                    (workTodayPerLabel[session.label] ?: 0L) + duration
+                workSessionsToday++
+            }
+            if (timestamp >= startOfThisWeek) {
+                workThisWeek += duration
+                workThisWeekPerLabel[session.label] =
+                    (workThisWeekPerLabel[session.label] ?: 0L) + duration
+                workSessionsThisWeek++
+            }
+            if (timestamp >= startOfThisMonth) {
+                workThisMonth += duration
+                workThisMonthPerLabel[session.label] =
+                    (workThisMonthPerLabel[session.label] ?: 0L) + duration
+                workSessionsThisMonth++
+            }
+            workTotal += duration
+            workTotalPerLabel[session.label] =
+                (workTotalPerLabel[session.label] ?: 0L) + duration
+            workSessionsTotal++
+        } else {
+            if (timestamp >= today) {
+                breakToday += duration
+            }
+            if (timestamp >= startOfThisWeek) {
+                breakThisWeek += duration
+            }
+            if (timestamp >= startOfThisMonth) {
+                breakThisMonth += duration
+            }
+            breakTotal += duration
         }
+    }
 
     // normalize the values for the heatmap
     heatmapData.forEach {
@@ -215,22 +207,23 @@ fun splitSessionByHour(
     dateTime: LocalDateTime,
     durationMinutes: Long,
 ): Map<Int, Long> {
+    if (durationMinutes <= 0) return emptyMap()
     val timezone = TimeZone.currentSystemDefault()
     val result = mutableMapOf<Int, Long>()
     var remainingDuration = durationMinutes
-    var currentDateTime =
+    val startDateTime =
         dateTime.toInstant(timezone).minus(durationMinutes.minutes).toLocalDateTime(timezone)
 
-    while (remainingDuration > 0) {
-        val currentHour = currentDateTime.hour
-        val minutesInCurrentHour = 60 - currentDateTime.minute
-        val minutesToAdd = minOf(remainingDuration, minutesInCurrentHour.toLong())
+    var currentHour = startDateTime.hour
+    var minutesInCurrentHour = (60 - startDateTime.minute).toLong()
 
-        result[currentHour] = (result[currentHour] ?: 0) + minutesToAdd
+    while (remainingDuration > 0) {
+        val minutesToAdd = minOf(remainingDuration, minutesInCurrentHour)
+        result[currentHour] = (result[currentHour] ?: 0L) + minutesToAdd
 
         remainingDuration -= minutesToAdd
-        currentDateTime =
-            currentDateTime.toInstant(timezone).plus(minutesToAdd.minutes).toLocalDateTime(timezone)
+        currentHour = (currentHour + 1) % 24
+        minutesInCurrentHour = 60L
     }
 
     return result
@@ -244,6 +237,6 @@ fun calculateSessionWeight(
     sessionTimestamp: Long,
     todayTimestamp: Long,
 ): Float {
-    val daysDifference = (todayTimestamp - sessionTimestamp).milliseconds.inWholeDays
-    return (365 - daysDifference).coerceIn(0L, 365L) / 365f
+    val daysDifference = (todayTimestamp - sessionTimestamp) / 86_400_000L
+    return (365L - daysDifference).coerceIn(0L, 365L) / 365f
 }

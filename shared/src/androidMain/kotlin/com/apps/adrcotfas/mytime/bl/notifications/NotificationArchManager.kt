@@ -330,7 +330,7 @@ class NotificationArchManager(
             title,
             PendingIntent.getService(
                 context,
-                0,
+                action.ordinal,
                 TimerService.createIntentWithAction(context, action),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             ),

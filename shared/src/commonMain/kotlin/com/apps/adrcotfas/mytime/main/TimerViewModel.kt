@@ -116,11 +116,11 @@ class TimerViewModel(
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun <T> tickingFlow(
-        tickWhile: (TimerState) -> Boolean,
+        tickWhile: (DomainTimerData) -> Boolean,
         selector: (DomainTimerData) -> T,
     ) = timerManager.timerData
         .flatMapLatest { data ->
-            if (tickWhile(data.runtime.state)) {
+            if (tickWhile(data)) {
                 flow {
                     while (true) {
                         emit(selector(data))
@@ -133,23 +133,24 @@ class TimerViewModel(
             }
         }.distinctUntilChanged()
 
-    // Stable timer state, without the per-second ticking time: tick only while RUNNING to refresh
-    // the whole-minute break budget; distinctUntilChanged then collapses the identical per-second
-    // emissions so the main screen doesn't recompose every second.
+    // Stable timer state: ticks only while RUNNING in count-up mode to refresh the whole-minute
+    // break budget (countdown mode budget is fixed at 0, skipping per-second allocations).
     val timerUiState =
-        tickingFlow(tickWhile = { it == TimerState.RUNNING }, selector = ::toUiState)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TimerUiState())
+        tickingFlow(
+            tickWhile = { it.runtime.state == TimerState.RUNNING && !it.label.profile.isCountdown },
+            selector = ::toUiState,
+        ).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TimerUiState())
 
     // The ticking countdown/count-up value, as its own narrow flow so only the timer text recomposes.
     val displayTime =
-        tickingFlow(tickWhile = { it == TimerState.RUNNING }) {
+        tickingFlow(tickWhile = { it.runtime.state == TimerState.RUNNING }) {
             max(it.getBaseTime(timeProvider), 0)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
     // Time elapsed since the session finished, ticking only while FINISHED (drives the finished
     // sheet's idle counter and its 30-minute auto-dismiss); the ticker stops once reset.
     val idleTime =
-        tickingFlow(tickWhile = { it == TimerState.FINISHED }) {
+        tickingFlow(tickWhile = { it.runtime.state == TimerState.FINISHED }) {
             if (it.runtime.state == TimerState.FINISHED) {
                 timeProvider.elapsedRealtime() - it.runtime.endTime
             } else {

@@ -67,17 +67,27 @@ android {
             // Google Drive API dependencies have conflicting META-INF files
             excludes += "/META-INF/INDEX.LIST"
             excludes += "/META-INF/DEPENDENCIES"
+            excludes += "META-INF/*.version"
+            excludes += "META-INF/LICENSE*"
+            excludes += "META-INF/NOTICE*"
+            excludes += "META-INF/*.txt"
         }
     }
 
     val storeFilePath = signingValue("storeFile", "RELEASE_STORE_FILE")
     signingConfigs {
+        getByName("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
+        }
         if (storeFilePath != null) {
             create("release") {
                 storeFile = rootProject.file(storeFilePath)
                 storePassword = signingValue("storePassword", "RELEASE_STORE_PASSWORD")
                 keyAlias = signingValue("keyAlias", "RELEASE_KEY_ALIAS")
                 keyPassword = signingValue("keyPassword", "RELEASE_KEY_PASSWORD")
+                enableV1Signing = true
+                enableV2Signing = true
             }
         }
     }
@@ -109,10 +119,8 @@ android {
 
     splits {
         abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
-            isUniversalApk = true
+            // ponytail: universal single APK per flavor avoids ABI mismatch errors during sideload
+            isEnable = false
         }
     }
 
