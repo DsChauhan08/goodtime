@@ -1,7 +1,7 @@
 [versions]
 
-app-version-name = "3.2.7"
-app-version-code = "365"
+app-version-name = "3.2.8"
+app-version-code = "366"
 kmp-app-version = "1.0.2"
 
 android-minSdk = "26"

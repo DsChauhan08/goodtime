@@ -27,3 +27,4 @@ fastlane/Preview.html
 keystore.properties
 *.keystore
 *.jks
+release-apks/

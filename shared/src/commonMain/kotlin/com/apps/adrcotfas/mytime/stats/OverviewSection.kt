@@ -28,6 +28,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -76,10 +77,12 @@ fun OverviewSection(
                     color = color,
                 ),
             )
+            val options = stringArrayResource(Res.array.stats_overview_type_options)
+            val optionsList = remember(options) { options.toList() }
             DropdownMenuBox(
                 textStyle = MaterialTheme.typography.bodySmall,
-                value = stringArrayResource(Res.array.stats_overview_type_options)[type.ordinal],
-                options = stringArrayResource(Res.array.stats_overview_type_options).toList(),
+                value = options[type.ordinal],
+                options = optionsList,
                 onDismissRequest = {},
                 onDropdownMenuItemSelected = {
                     onTypeChanged(OverviewType.entries[it])

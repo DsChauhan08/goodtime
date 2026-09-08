@@ -1,0 +1,4 @@
+• Overhauled Statistics screen with LazyColumn for smooth scrolling and instant loading
+• Eliminated frame drops and lag when entering the Statistics overview
+• Removed About and Feedback section for a cleaner interface
+• Performance and memory optimizations across all chart components
