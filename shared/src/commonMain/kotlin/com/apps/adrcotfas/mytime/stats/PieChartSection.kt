@@ -53,6 +53,7 @@ import com.apps.adrcotfas.mytime.common.formatOverview
 import com.apps.adrcotfas.mytime.data.model.Label
 import com.apps.adrcotfas.mytime.data.settings.OverviewDurationType
 import com.apps.adrcotfas.mytime.ui.DropdownMenuBox
+import com.apps.adrcotfas.mytime.ui.LocalColorsPalette
 import com.apps.adrcotfas.mytime.ui.getLabelColor
 import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
@@ -83,11 +84,13 @@ fun PieChartSection(
     color: Color = MaterialTheme.colorScheme.primary,
 ) {
     val workPerLabel =
-        when (overviewDurationType) {
-            OverviewDurationType.TODAY -> overviewData.workTodayPerLabel.filterValues { it != 0L }
-            OverviewDurationType.THIS_WEEK -> overviewData.workThisWeekPerLabel.filterValues { it != 0L }
-            OverviewDurationType.THIS_MONTH -> overviewData.workThisMonthPerLabel.filterValues { it != 0L }
-            OverviewDurationType.TOTAL -> overviewData.workTotalPerLabel.filterValues { it != 0L }
+        remember(overviewDurationType, overviewData) {
+            when (overviewDurationType) {
+                OverviewDurationType.TODAY -> overviewData.workTodayPerLabel.filterValues { it != 0L }
+                OverviewDurationType.THIS_WEEK -> overviewData.workThisWeekPerLabel.filterValues { it != 0L }
+                OverviewDurationType.THIS_MONTH -> overviewData.workThisMonthPerLabel.filterValues { it != 0L }
+                OverviewDurationType.TOTAL -> overviewData.workTotalPerLabel.filterValues { it != 0L }
+            }
         }
 
     // Might happen when we toggle showing archived labels
@@ -103,21 +106,36 @@ fun PieChartSection(
 
     val defaultName = stringResource(Res.string.labels_default_label_name)
     val othersName = stringResource(Res.string.labels_others)
+
     val labelNames =
-        labels.map {
-            when (it) {
-                Label.DEFAULT_LABEL_NAME -> defaultName
-                Label.OTHERS_LABEL_NAME -> othersName
-                else -> it
+        remember(labels, defaultName, othersName) {
+            labels.map {
+                when (it) {
+                    Label.DEFAULT_LABEL_NAME -> defaultName
+                    Label.OTHERS_LABEL_NAME -> othersName
+                    else -> it
+                }
             }
         }
+
+    val palette = LocalColorsPalette.current.colors
     val colors =
-        labels.map {
-            when (it) {
-                Label.OTHERS_LABEL_NAME -> MaterialTheme.getLabelColor(Label.OTHERS_LABEL_COLOR_INDEX)
-                else -> MaterialTheme.getLabelColor(selectedLabels.first { label -> label.name == it }.colorIndex)
+        remember(selectedLabels, labels, palette) {
+            labels.map { name ->
+                val colorIndex =
+                    if (name == Label.OTHERS_LABEL_NAME) {
+                        Label.OTHERS_LABEL_COLOR_INDEX
+                    } else {
+                        selectedLabels.firstOrNull { it.name == name }?.colorIndex ?: Label.DEFAULT_LABEL_COLOR_INDEX
+                    }
+                palette.getOrElse(colorIndex) { palette[Label.DEFAULT_LABEL_COLOR_INDEX] }
             }
         }
+
+    val coroutineScope = rememberCoroutineScope()
+    var selectedIndex by rememberSaveable(saver = Saver(save = { it }, restore = { it })) {
+        mutableStateOf<Int?>(null)
+    }
 
     Column(
         modifier =
@@ -125,6 +143,7 @@ fun PieChartSection(
             .fillMaxWidth()
             .padding(vertical = 16.dp),
         verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
             modifier =
@@ -142,10 +161,11 @@ fun PieChartSection(
                     color = color,
                 ),
             )
+            val options = remember(typeNames) { typeNames.values.toList() }
             DropdownMenuBox(
                 textStyle = MaterialTheme.typography.bodySmall,
                 value = typeNames[overviewDurationType]!!,
-                options = typeNames.values.toList(),
+                options = options,
                 onDismissRequest = {},
                 onDropdownMenuItemSelected = {
                     onChangeType(OverviewDurationType.entries[it])

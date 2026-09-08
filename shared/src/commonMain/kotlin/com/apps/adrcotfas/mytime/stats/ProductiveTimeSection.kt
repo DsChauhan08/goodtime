@@ -88,8 +88,12 @@ fun ProductiveTimeSection(
     is24HourFormat: Boolean,
     color: Color = MaterialTheme.colorScheme.primary,
 ) {
-    val workdayStartHour = LocalTime.fromSecondOfDay(workDayStart).hour
-    val sortedData = productiveHoursOfTheDay.rotate(workdayStartHour)
+    val workdayStartHour = remember(workDayStart) { LocalTime.fromSecondOfDay(workDayStart).hour }
+    val sortedData =
+        remember(productiveHoursOfTheDay, workdayStartHour) {
+            productiveHoursOfTheDay.rotate(workdayStartHour)
+        }
+    val sortedDataList = remember(sortedData) { sortedData.toList() }
 
     Column(
         modifier =
@@ -111,8 +115,8 @@ fun ProductiveTimeSection(
             ),
         )
         val density = LocalDensity.current
-        val cellSize = remember { with(density) { 12.sp.toDp() } * 1.5f }
-        val cellSpacing = remember { cellSize / 6f }
+        val cellSize = remember(density) { with(density) { 12.sp.toDp() } * 1.5f }
+        val cellSpacing = remember(cellSize) { cellSize / 6f }
 
         Column(
             modifier =
@@ -147,7 +151,7 @@ fun ProductiveTimeSection(
                         state = listState,
                         flingBehavior = rememberSnapFlingBehavior(listState, SnapPosition.Start),
                     ) {
-                        items(sortedData.toList(), key = { it.first }) { (hour, value) ->
+                        items(sortedDataList, key = { it.first }) { (hour, value) ->
                             Column(
                                 modifier = Modifier.wrapContentWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally,

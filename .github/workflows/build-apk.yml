@@ -31,9 +31,9 @@ on:
         default: true
         type: boolean
       tag_name:
-        description: 'Release tag (default: v3.2.7)'
+        description: 'Release tag (default: v3.2.8)'
         required: false
-        default: 'v3.2.7'
+        default: 'v3.2.8'
         type: string
 
 concurrency:

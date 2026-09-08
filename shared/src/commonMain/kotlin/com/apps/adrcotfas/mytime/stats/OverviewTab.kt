@@ -17,10 +17,9 @@
  */
 package com.apps.adrcotfas.mytime.stats
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -58,58 +57,75 @@ fun OverviewTab(
 
     val monthNames = remember { getLocalizedMonthNamesForStats() }
 
-    Column(
-        Modifier
-            .padding(top = 8.dp)
-            .verticalScroll(rememberScrollState()),
-    ) {
-        val typeNames =
+    val todayString = stringResource(Res.string.stats_today)
+    val weekString =
+        stringResource(
+            Res.string.stats_week,
+            currentDateTime.date.isoWeekNumber(),
+        )
+    val totalString = stringResource(Res.string.stats_total)
+
+    val typeNames =
+        remember(currentDateTime, monthNames, todayString, weekString, totalString) {
             mapOf(
-                OverviewDurationType.TODAY to stringResource(Res.string.stats_today),
-                OverviewDurationType.THIS_WEEK to
-                    stringResource(
-                        Res.string.stats_week,
-                        currentDateTime.date.isoWeekNumber(),
-                    ),
+                OverviewDurationType.TODAY to todayString,
+                OverviewDurationType.THIS_WEEK to weekString,
                 OverviewDurationType.THIS_MONTH to monthNames[currentDateTime.month.ordinal],
-                OverviewDurationType.TOTAL to stringResource(Res.string.stats_total),
-            )
-
-        OverviewSection(
-            statisticsData.overviewData,
-            typeNames,
-            statisticsSettings.overviewType,
-            onChangeOverviewType,
-        )
-
-        HistorySection(historyChartViewModel)
-
-        ProductiveTimeSection(
-            statisticsData.productiveHoursOfTheDay,
-            workDayStart,
-            is24HourFormat,
-        )
-
-        HeatmapSection(
-            firstDayOfWeek,
-            data = statisticsData.heatmapData,
-        )
-
-        if (uiState.selectedLabels.size > 1) {
-            PieChartSection(
-                statisticsData.overviewData,
-                statisticsSettings.pieChartViewType,
-                onChangePieChartOverviewType,
-                typeNames = typeNames,
-                selectedLabels = uiState.selectedLabels,
+                OverviewDurationType.TOTAL to totalString,
             )
         }
 
-        WorkBreakRatioSection(
-            statisticsData.overviewData,
-            statisticsSettings.overviewDurationType,
-            onChangeOverviewDurationType,
-            typeNames = typeNames,
-        )
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
+    ) {
+        item(key = "overview") {
+            OverviewSection(
+                statisticsData.overviewData,
+                typeNames,
+                statisticsSettings.overviewType,
+                onChangeOverviewType,
+            )
+        }
+
+        item(key = "history") {
+            HistorySection(historyChartViewModel)
+        }
+
+        item(key = "productive_time") {
+            ProductiveTimeSection(
+                statisticsData.productiveHoursOfTheDay,
+                workDayStart,
+                is24HourFormat,
+            )
+        }
+
+        item(key = "heatmap") {
+            HeatmapSection(
+                firstDayOfWeek,
+                data = statisticsData.heatmapData,
+            )
+        }
+
+        if (uiState.selectedLabels.size > 1) {
+            item(key = "pie_chart") {
+                PieChartSection(
+                    statisticsData.overviewData,
+                    statisticsSettings.pieChartViewType,
+                    onChangePieChartOverviewType,
+                    typeNames = typeNames,
+                    selectedLabels = uiState.selectedLabels,
+                )
+            }
+        }
+
+        item(key = "work_break_ratio") {
+            WorkBreakRatioSection(
+                statisticsData.overviewData,
+                statisticsSettings.overviewDurationType,
+                onChangeOverviewDurationType,
+                typeNames = typeNames,
+            )
+        }
     }
 }

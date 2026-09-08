@@ -41,18 +41,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.apps.adrcotfas.mytime.common.getVersionName
 import com.apps.adrcotfas.mytime.settings.ActionSection
 import com.apps.adrcotfas.mytime.ui.IconTextButton
 import com.apps.adrcotfas.mytime.ui.SubtleHorizontalDivider
 import compose.icons.EvaIcons
 import compose.icons.evaicons.Outline
-import compose.icons.evaicons.outline.Info
 import compose.icons.evaicons.outline.PieChart
 import compose.icons.evaicons.outline.Settings
 import compose.icons.evaicons.outline.Sync
 import mytime_productivity.shared.generated.resources.Res
-import mytime_productivity.shared.generated.resources.about_and_feedback_title
 import mytime_productivity.shared.generated.resources.backup_and_restore_title
 import mytime_productivity.shared.generated.resources.labels_title
 import mytime_productivity.shared.generated.resources.product_name_long
@@ -100,10 +97,6 @@ fun MainNavigationSheet(
                 navController.navigate(BackupDest)
                 onHideSheet()
             },
-            navigateToAbout = {
-                navController.navigate(AboutDest)
-                onHideSheet()
-            },
         )
     }
 }
@@ -119,7 +112,6 @@ fun MainNavigationSheetContent(
     navigateToStats: () -> Unit,
     navigateToSettings: () -> Unit,
     navigateToBackup: () -> Unit,
-    navigateToAbout: () -> Unit,
 ) {
     Column(
         modifier =
@@ -197,19 +189,6 @@ fun MainNavigationSheetContent(
                 )
             },
             onClick = navigateToSettings,
-        )
-        IconTextButton(
-            title = stringResource(Res.string.about_and_feedback_title),
-            subtitle = "v${getVersionName()}",
-            icon = {
-                Icon(
-                    imageVector = EvaIcons.Outline.Info,
-                    contentDescription = stringResource(Res.string.about_and_feedback_title),
-                )
-            },
-            onClick = {
-                navigateToAbout()
-            },
         )
     }
 }
