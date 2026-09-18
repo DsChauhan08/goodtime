@@ -92,6 +92,7 @@ data class TimerMainUiState(
     val showTutorial: Boolean = false,
     val isPro: Boolean = false,
     val pipMode: Boolean = true,
+    val strictFocusMode: Boolean = false,
 )
 
 private data class TimerScreenSettings(
@@ -194,6 +195,7 @@ class TimerViewModel(
                             isPro = settings.isPro,
                             showTutorial = settings.showTutorial,
                             pipMode = uiSettings.pipMode,
+                            strictFocusMode = uiSettings.strictFocusMode,
                         )
                     }
                 }

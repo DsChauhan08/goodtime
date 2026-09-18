@@ -165,6 +165,14 @@ class SettingsViewModel(
         }
     }
 
+    fun setStrictFocusMode(enable: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateUiSettings {
+                it.copy(strictFocusMode = enable)
+            }
+        }
+    }
+
     fun setWorkDayStart(secondOfDay: Int) {
         viewModelScope.launch {
             settingsRepository.setWorkDayStart(secondOfDay)

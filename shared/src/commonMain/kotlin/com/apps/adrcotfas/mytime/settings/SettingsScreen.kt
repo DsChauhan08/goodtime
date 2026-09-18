@@ -78,6 +78,8 @@ import mytime_productivity.shared.generated.resources.settings_notifications_tit
 import mytime_productivity.shared.generated.resources.settings_productivity_reminder_title
 import mytime_productivity.shared.generated.resources.settings_screensaver_mode
 import mytime_productivity.shared.generated.resources.settings_start_of_the_week
+import mytime_productivity.shared.generated.resources.settings_strict_focus_mode_desc
+import mytime_productivity.shared.generated.resources.settings_strict_focus_mode_title
 import mytime_productivity.shared.generated.resources.settings_timer_and_sessions
 import mytime_productivity.shared.generated.resources.settings_timer_durations_desc
 import mytime_productivity.shared.generated.resources.settings_timer_durations_title
@@ -217,6 +219,13 @@ fun SettingsScreen(
                 if (!it) {
                     viewModel.setScreensaverMode(false)
                 }
+            }
+            CheckboxListItem(
+                title = stringResource(Res.string.settings_strict_focus_mode_title),
+                subtitle = stringResource(Res.string.settings_strict_focus_mode_desc),
+                checked = uiState.settings.uiSettings.strictFocusMode,
+            ) {
+                viewModel.setStrictFocusMode(it)
             }
             if (uiState.settings.isPro) {
                 CheckboxListItem(
