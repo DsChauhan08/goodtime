@@ -22,6 +22,7 @@ import androidx.lifecycle.viewModelScope
 import com.apps.adrcotfas.mytime.bl.DomainLabel
 import com.apps.adrcotfas.mytime.bl.DomainTimerData
 import com.apps.adrcotfas.mytime.bl.FinishActionType
+import com.apps.adrcotfas.mytime.bl.PauseReason
 import com.apps.adrcotfas.mytime.bl.TimeProvider
 import com.apps.adrcotfas.mytime.bl.TimerManager
 import com.apps.adrcotfas.mytime.bl.TimerState
@@ -70,6 +71,7 @@ data class TimerUiState(
     val sessionsBeforeLongBreak: Int = 0,
     val longBreakData: LongBreakData = LongBreakData(),
     val breakBudgetMinutes: Long = 0,
+    val lastPauseReason: PauseReason = PauseReason.MANUAL,
 ) {
     val isPaused = timerState.isPaused
     val isActive = timerState.isActive
@@ -248,6 +250,7 @@ class TimerViewModel(
         sessionsBeforeLongBreak = it.inUseSessionsBeforeLongBreak(),
         longBreakData = it.longBreakData,
         breakBudgetMinutes = it.getBreakBudget(timeProvider.elapsedRealtime()).inWholeMinutes,
+        lastPauseReason = it.runtime.lastPauseReason,
     )
 
     fun skip() {

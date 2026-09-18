@@ -61,6 +61,7 @@ data class TimerRuntimeState(
     val state: TimerState = TimerState.RESET,
     val type: TimerType = TimerType.FOCUS,
     val timeSpentPaused: Long = 0, // millis spent in pause
+    val lastPauseReason: PauseReason = PauseReason.MANUAL,
 )
 
 /**

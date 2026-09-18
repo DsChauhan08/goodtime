@@ -285,7 +285,7 @@ class TimerManager(
         }
     }
 
-    private fun pause() {
+    fun pause(reason: PauseReason = PauseReason.MANUAL) {
         val timerDataValue = timerData.value
         val isBreakOfCountUpProfile = !timerDataValue.label.isCountdown && timerDataValue.runtime.type != TimerType.FOCUS
         if (isBreakOfCountUpProfile) {
@@ -306,10 +306,11 @@ class TimerManager(
                     },
                     lastPauseTime = elapsedRealtime,
                     state = TimerState.PAUSED,
+                    lastPauseReason = reason,
                 ),
             )
         }
-        log.i { "Paused: ${timerData.value}" }
+        log.i { "Paused (reason=$reason): ${timerData.value}" }
         listeners.forEach { it.onEvent(Event.Pause(runtimeState = _timerData.value.runtime)) }
     }
 
