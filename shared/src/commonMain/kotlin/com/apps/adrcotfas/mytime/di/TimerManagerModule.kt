@@ -20,7 +20,9 @@ package com.apps.adrcotfas.mytime.di
 import com.apps.adrcotfas.mytime.bl.BreakBudgetManager
 import com.apps.adrcotfas.mytime.bl.EventListener
 import com.apps.adrcotfas.mytime.bl.FinishedSessionsHandler
+import com.apps.adrcotfas.mytime.bl.NoOpStrictFocusManager
 import com.apps.adrcotfas.mytime.bl.StreakManager
+import com.apps.adrcotfas.mytime.bl.StrictFocusManager
 import com.apps.adrcotfas.mytime.bl.TimeProvider
 import com.apps.adrcotfas.mytime.bl.TimerForegroundMonitor
 import com.apps.adrcotfas.mytime.bl.TimerManager
@@ -69,7 +71,8 @@ val timerManagerModule =
             TimerForegroundMonitor(
                 timerManager = get(),
                 timeProvider = get(),
-                getWith("TimerForegroundMonitor"),
+                logger = getWith("TimerForegroundMonitor"),
+                strictFocusManager = getOrNull<StrictFocusManager>() ?: NoOpStrictFocusManager(),
             )
         }
     }

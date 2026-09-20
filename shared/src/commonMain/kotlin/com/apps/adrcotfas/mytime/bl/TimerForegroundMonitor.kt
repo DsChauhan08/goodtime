@@ -36,11 +36,13 @@ class TimerForegroundMonitor(
     private val timerManager: TimerManager,
     private val timeProvider: TimeProvider,
     private val logger: Logger,
+    private val strictFocusManager: StrictFocusManager = NoOpStrictFocusManager(),
 ) {
     private var foregroundJob: Job? = null
 
     fun onBringToForeground(scope: CoroutineScope) {
         logger.v { "onBringToForeground" }
+        strictFocusManager.onAppForegrounded()
         timerManager.onBringToForeground()
         foregroundJob?.cancel()
         foregroundJob =
@@ -51,6 +53,7 @@ class TimerForegroundMonitor(
 
     fun onSendToBackground() {
         logger.v { "onSendToBackground" }
+        strictFocusManager.onAppBackgrounded()
         timerManager.onSendToBackground()
         foregroundJob?.cancel()
         foregroundJob = null
