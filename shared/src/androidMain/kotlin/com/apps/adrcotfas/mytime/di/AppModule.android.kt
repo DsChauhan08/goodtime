@@ -22,7 +22,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.RoomDatabase
 import com.apps.adrcotfas.mytime.bl.AlarmManagerHandler
+import com.apps.adrcotfas.mytime.bl.AndroidStrictFocusManager
 import com.apps.adrcotfas.mytime.bl.DndModeManager
+import com.apps.adrcotfas.mytime.bl.StrictFocusManager
 import com.apps.adrcotfas.mytime.bl.EventListener
 import com.apps.adrcotfas.mytime.bl.TimerServiceStarter
 import com.apps.adrcotfas.mytime.bl.TimerStatePersistenceListener
@@ -135,6 +137,16 @@ actual val platformModule: Module =
                 context = get(),
                 timeProvider = get(),
                 logger = getWith("ReminderScheduler"),
+            )
+        }
+
+        single<StrictFocusManager> {
+            AndroidStrictFocusManager(
+                context = get(),
+                timerManager = get(),
+                settingsRepo = get(),
+                coroutineScope = get<CoroutineScope>(named(MAIN_SCOPE)),
+                log = getWith("AndroidStrictFocusManager"),
             )
         }
     }
