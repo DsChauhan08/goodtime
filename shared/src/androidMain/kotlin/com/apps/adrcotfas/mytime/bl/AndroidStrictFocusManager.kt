@@ -26,6 +26,8 @@ import android.os.PowerManager
 import co.touchlab.kermit.Logger
 import com.apps.adrcotfas.mytime.data.settings.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -42,6 +44,7 @@ class AndroidStrictFocusManager(
 
     private var isScreenOff = false
     private var isAppInForeground = false
+    private var evaluationJob: Job? = null
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -49,11 +52,13 @@ class AndroidStrictFocusManager(
                 Intent.ACTION_SCREEN_OFF -> {
                     log.d { "StrictFocusManager: Screen turned OFF" }
                     isScreenOff = true
+                    evaluationJob?.cancel()
+                    evaluationJob = null
                 }
                 Intent.ACTION_SCREEN_ON -> {
                     log.d { "StrictFocusManager: Screen turned ON" }
                     isScreenOff = false
-                    evaluateBackgroundState()
+                    scheduleEvaluation()
                 }
             }
         }
@@ -70,42 +75,56 @@ class AndroidStrictFocusManager(
     override fun onAppForegrounded() {
         log.v { "StrictFocusManager: onAppForegrounded" }
         isAppInForeground = true
+        evaluationJob?.cancel()
+        evaluationJob = null
     }
 
     override fun onAppBackgrounded() {
         log.v { "StrictFocusManager: onAppBackgrounded" }
         isAppInForeground = false
-        evaluateBackgroundState()
+        scheduleEvaluation()
     }
 
-    private fun evaluateBackgroundState() {
+    private fun scheduleEvaluation() {
+        evaluationJob?.cancel()
+        evaluationJob = coroutineScope.launch {
+            // Latch delay to avoid race conditions on OEM devices where onStop/onPause
+            // fires slightly before ACTION_SCREEN_OFF or PowerManager state flips
+            delay(SCREEN_OFF_DEBOUNCE_MS)
+            evaluateBackgroundState()
+        }
+    }
+
+    private suspend fun evaluateBackgroundState() {
         val timerData = timerManager.timerData.value
         if (!timerData.runtime.state.isRunning || !timerData.runtime.type.isFocus) {
             return
         }
 
-        coroutineScope.launch {
-            val settings = settingsRepo.settings.first()
-            if (!settings.uiSettings.strictFocusMode) {
-                return@launch
-            }
-
-            val isInteractive = powerManager.isInteractive
-            val isLocked = keyguardManager?.isKeyguardLocked ?: false
-
-            log.d { "Evaluating strict focus: interactive=$isInteractive, screenOff=$isScreenOff, locked=$isLocked" }
-
-            // If screen is off or device is locked, user put phone away to focus -> ALLOWED
-            if (!isInteractive || isScreenOff || isLocked) {
-                log.i { "Strict focus: device locked or screen off, timer continues normally." }
-                return@launch
-            }
-
-            // Screen is on and interactive while app is not in foreground -> VIOLATION
-            if (!isAppInForeground) {
-                log.w { "Strict focus violation: App was left while screen was interactive! Pausing timer." }
-                timerManager.pause(reason = PauseReason.STRICT_FOCUS_VIOLATION)
-            }
+        val settings = settingsRepo.settings.first()
+        if (!settings.uiSettings.strictFocusMode) {
+            return
         }
+
+        val isInteractive = powerManager.isInteractive
+        val isLocked = keyguardManager?.isKeyguardLocked ?: false
+
+        log.d { "Evaluating strict focus: interactive=$isInteractive, screenOff=$isScreenOff, locked=$isLocked, inForeground=$isAppInForeground" }
+
+        // If screen is off or device is locked, user put phone away to focus -> ALLOWED
+        if (!isInteractive || isScreenOff || isLocked) {
+            log.i { "Strict focus: device locked or screen off, timer continues normally." }
+            return
+        }
+
+        // Screen is on and interactive while app is not in foreground -> VIOLATION
+        if (!isAppInForeground) {
+            log.w { "Strict focus violation: App was left while screen was interactive! Pausing timer." }
+            timerManager.pause(reason = PauseReason.STRICT_FOCUS_VIOLATION)
+        }
+    }
+
+    companion object {
+        private const val SCREEN_OFF_DEBOUNCE_MS = 300L
     }
 }
