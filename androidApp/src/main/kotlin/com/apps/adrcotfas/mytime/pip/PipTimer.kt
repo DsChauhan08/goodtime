@@ -104,7 +104,10 @@ private fun ComponentActivity.sourceRectHint(): Rect? {
 private fun shouldEnterPip(
     timerUiState: TimerUiState,
     uiState: TimerMainUiState,
-) = timerUiState.isActive && uiState.isPro && uiState.pipMode && !uiState.isLoading
+): Boolean {
+    val isStrictBlocked = uiState.strictFocusMode && !timerUiState.isBreak
+    return timerUiState.isActive && uiState.isPro && uiState.pipMode && !uiState.isLoading && !isStrictBlocked
+}
 
 private data class PipState(
     val autoEnter: Boolean,
