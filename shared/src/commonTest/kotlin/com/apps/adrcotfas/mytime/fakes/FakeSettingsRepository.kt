@@ -231,4 +231,30 @@ class FakeSettingsRepository(
             _settings.value.copy(persistedTimerState = null),
         )
     }
+
+    override suspend fun updateGamification(transform: (com.apps.adrcotfas.mytime.data.settings.GamificationData) -> com.apps.adrcotfas.mytime.data.settings.GamificationData) {
+        _settings.emit(
+            _settings.value.copy(gamification = transform(_settings.value.gamification)),
+        )
+    }
+
+    override suspend fun awardFocusXp(minutes: Int, isTaskBonus: Boolean) {
+        val earnedXp = minutes.coerceAtLeast(1) * 1L + (if (isTaskBonus) 25L else 0L)
+        updateGamification { current ->
+            var newXp = current.xp + earnedXp
+            var newLevel = current.level
+            while (newXp >= newLevel * 100L) {
+                newXp -= newLevel * 100L
+                newLevel++
+            }
+            val newTasks = if (isTaskBonus) current.tasksCompletedCount + 1 else current.tasksCompletedCount
+            val restoredIntegrity = (current.focusIntegrity + 5).coerceAtMost(100)
+            current.copy(
+                xp = newXp,
+                level = newLevel,
+                focusIntegrity = restoredIntegrity,
+                tasksCompletedCount = newTasks,
+            )
+        }
+    }
 }

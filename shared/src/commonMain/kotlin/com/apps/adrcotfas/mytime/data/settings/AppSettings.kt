@@ -63,6 +63,7 @@ data class AppSettings(
     /** The version code of the last dismissed update, or 0 if no update has been dismissed */
     val lastDismissedUpdateVersionCode: Long = 0,
     val persistedTimerState: PersistedTimerState? = null,
+    val gamification: GamificationData = GamificationData(),
 )
 
 enum class NotificationPermissionState {
@@ -142,3 +143,21 @@ data class BackupSettings(
     /** Timestamp in milliseconds for Android local folder backups */
     val localLastBackupTimestamp: Long = 0L,
 )
+
+@Serializable
+data class GamificationData(
+    val level: Int = 1,
+    val xp: Long = 0L,
+    val focusIntegrity: Int = 100,
+    val tasksCompletedCount: Int = 0,
+    val currentStreak: Int = 0,
+    val bestStreak: Int = 0,
+    val lastActiveDayEpoch: Long = 0L,
+) {
+    val xpForNextLevel: Long
+        get() = (level * 100L)
+
+    val currentLevelProgress: Float
+        get() = (xp.toFloat() / xpForNextLevel.toFloat()).coerceIn(0f, 1f)
+}
+

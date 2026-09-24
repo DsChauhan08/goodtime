@@ -73,6 +73,7 @@ class SettingsRepositoryImpl(
         val backupSettingsKey = stringPreferencesKey("backupSettingsKey")
         val lastDismissedUpdateVersionCodeKey = longPreferencesKey("lastDismissedUpdateVersionCodeKey")
         val persistedTimerStateKey = stringPreferencesKey("persistedTimerStateKey")
+        val gamificationKey = stringPreferencesKey("gamificationKey")
     }
 
     override val settings: Flow<AppSettings> =
@@ -168,6 +169,10 @@ class SettingsRepositoryImpl(
                     it[Keys.persistedTimerStateKey]?.let { p ->
                         json.decodeFromString<PersistedTimerState>(p)
                     },
+                    gamification =
+                    it[Keys.gamificationKey]?.let { g ->
+                        json.decodeFromString<GamificationData>(g)
+                    } ?: default.gamification,
                 )
             }.catch {
                 log.e("Error parsing settings", it)
@@ -344,5 +349,35 @@ class SettingsRepositoryImpl(
 
     override suspend fun clearPersistedTimerState() {
         dataStore.edit { it.remove(Keys.persistedTimerStateKey) }
+    }
+
+    override suspend fun updateGamification(transform: (GamificationData) -> GamificationData) {
+        dataStore.edit {
+            val previous =
+                it[Keys.gamificationKey]?.let { g -> json.decodeFromString<GamificationData>(g) }
+                    ?: GamificationData()
+            val new = transform(previous)
+            it[Keys.gamificationKey] = json.encodeToString(new)
+        }
+    }
+
+    override suspend fun awardFocusXp(minutes: Int, isTaskBonus: Boolean) {
+        val earnedXp = minutes.coerceAtLeast(1) * 1L + (if (isTaskBonus) 25L else 0L)
+        updateGamification { current ->
+            var newXp = current.xp + earnedXp
+            var newLevel = current.level
+            while (newXp >= newLevel * 100L) {
+                newXp -= newLevel * 100L
+                newLevel++
+            }
+            val newTasks = if (isTaskBonus) current.tasksCompletedCount + 1 else current.tasksCompletedCount
+            val restoredIntegrity = (current.focusIntegrity + 5).coerceAtMost(100)
+            current.copy(
+                xp = newXp,
+                level = newLevel,
+                focusIntegrity = restoredIntegrity,
+                tasksCompletedCount = newTasks,
+            )
+        }
     }
 }

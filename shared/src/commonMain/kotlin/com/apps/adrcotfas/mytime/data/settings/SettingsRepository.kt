@@ -94,6 +94,10 @@ interface SettingsRepository {
     suspend fun setPersistedTimerState(state: PersistedTimerState?)
 
     suspend fun clearPersistedTimerState()
+
+    suspend fun updateGamification(transform: (GamificationData) -> GamificationData)
+
+    suspend fun awardFocusXp(minutes: Int, isTaskBonus: Boolean = false)
 }
 
 /**

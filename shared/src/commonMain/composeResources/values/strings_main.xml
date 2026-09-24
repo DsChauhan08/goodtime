@@ -54,4 +54,18 @@
     <string name="main_strict_focus_exit_title">Strict Focus Active</string>
     <string name="main_strict_focus_exit_desc">Leaving the app will pause your focus session. Are you sure you want to pause and leave?</string>
     <string name="main_strict_focus_paused_banner">Paused: Strict Mode</string>
+    <string name="gamification_level">Level %d</string>
+    <string name="gamification_xp">%d / %d XP</string>
+    <string name="gamification_integrity">Discipline %d%%</string>
+    <string name="gamification_deficit">Deficit</string>
+    <string name="plan_title">Plan</string>
+    <string name="plan_today">Today</string>
+    <string name="plan_tomorrow">Tomorrow</string>
+    <string name="plan_no_tasks">No focus blocks planned. Tap + to set an intention.</string>
+    <string name="plan_add_task">New Focus Block</string>
+    <string name="plan_edit_task">Edit Focus Block</string>
+    <string name="plan_task_title">Title</string>
+    <string name="plan_start_time">Start Time</string>
+    <string name="plan_duration">Duration</string>
+    <string name="plan_start_focus">Start</string>
 </resources>
