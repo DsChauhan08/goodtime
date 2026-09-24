@@ -25,6 +25,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+import kotlin.time.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+
 class FinishedSessionsHandler(
     private val coroutineScope: CoroutineScope,
     private val repo: LocalDataRepository,
@@ -73,6 +77,27 @@ class FinishedSessionsHandler(
             val id = repo.insertSession(session)
             log.v { "Inserted session with id: $id" }
             settingsRepo.setLastInsertedSessionId(id)
+
+            // Award focus XP for time spent focusing
+            if (session.duration > 0) {
+                settingsRepo.awardFocusXp(session.duration.toInt(), isTaskBonus = false)
+            }
+
+            // Link to any pending planned task for today with matching label
+            try {
+                val todayDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                val todayEpoch = todayDate.toEpochDays()
+                val plannedTasks = repo.selectPlannedTasksForDay(todayEpoch).first()
+                val pendingTask = plannedTasks.firstOrNull { !it.isCompleted && it.labelName == session.label }
+                if (pendingTask != null) {
+                    repo.updatePlannedTask(pendingTask.copy(isCompleted = true, linkedSessionId = id))
+                    // Award bonus completion XP for finishing planned task
+                    settingsRepo.awardFocusXp(pendingTask.targetDurationMinutes, isTaskBonus = true)
+                    log.i { "Completed planned task: ${pendingTask.title} linked to session $id" }
+                }
+            } catch (e: Exception) {
+                log.e { "Error linking planned task: $e" }
+            }
         }
     }
 
