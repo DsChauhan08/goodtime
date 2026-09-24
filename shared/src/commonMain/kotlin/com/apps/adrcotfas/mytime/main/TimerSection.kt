@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import com.apps.adrcotfas.mytime.bl.DomainLabel
+import com.apps.adrcotfas.mytime.bl.PauseReason
 import com.apps.adrcotfas.mytime.bl.TimeUtils.formatMilliseconds
 import com.apps.adrcotfas.mytime.bl.TimerType
 import com.apps.adrcotfas.mytime.common.formatOverview
@@ -85,6 +86,7 @@ import mytime_productivity.shared.generated.resources.Res
 import mytime_productivity.shared.generated.resources.ic_break
 import mytime_productivity.shared.generated.resources.ic_status_mytime
 import mytime_productivity.shared.generated.resources.labels_break_budget
+import mytime_productivity.shared.generated.resources.main_strict_focus_paused_banner
 import mytime_productivity.shared.generated.resources.stats_break
 import mytime_productivity.shared.generated.resources.stats_focus
 import org.jetbrains.compose.resources.painterResource
@@ -125,6 +127,7 @@ fun MainTimerView(
             isBreak = isBreak,
             isActive = timerUiState.isActive,
             isPaused = timerUiState.isPaused,
+            lastPauseReason = timerUiState.lastPauseReason,
             isCountdown = isCountdown,
             streak = timerUiState.longBreakData.streak,
             sessionsBeforeLongBreak = timerUiState.sessionsBeforeLongBreak,
@@ -184,6 +187,7 @@ fun CurrentStatusSection(
     isBreak: Boolean,
     isActive: Boolean,
     isPaused: Boolean,
+    lastPauseReason: PauseReason = PauseReason.MANUAL,
     isCountdown: Boolean,
     streak: Int,
     sessionsBeforeLongBreak: Int,
@@ -212,6 +216,12 @@ fun CurrentStatusSection(
             color = statusColor,
             backgroundColor = statusBackgroundColor,
         )
+        if (isPaused && lastPauseReason == PauseReason.STRICT_FOCUS_VIOLATION) {
+            StrictFocusPausedIndicator(
+                color = statusColor,
+                backgroundColor = statusBackgroundColor,
+            )
+        }
         StreakIndicator(
             showStreak = showStreak && isCountdown,
             isBreak = isBreak,
@@ -224,6 +234,30 @@ fun CurrentStatusSection(
             showBreakBudget = showBreakBudget && !isCountdown,
             breakBudget = breakBudget,
             onClick = onBreakBudgetClick,
+        )
+    }
+}
+
+@Composable
+fun StrictFocusPausedIndicator(
+    color: Color,
+    backgroundColor: Color,
+) {
+    Box(
+        modifier =
+        Modifier
+            .padding(horizontal = 4.dp)
+            .height(statusChipHeight())
+            .clip(MaterialTheme.shapes.small)
+            .background(backgroundColor)
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(Res.string.main_strict_focus_paused_banner),
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Medium,
         )
     }
 }

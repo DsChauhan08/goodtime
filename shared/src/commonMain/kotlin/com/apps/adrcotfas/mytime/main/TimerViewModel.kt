@@ -226,6 +226,10 @@ class TimerViewModel(
         timerManager.toggle()
     }
 
+    fun pauseTimer(reason: PauseReason = PauseReason.MANUAL) {
+        timerManager.pause(reason)
+    }
+
     fun resetTimer(actionType: FinishActionType = FinishActionType.MANUAL_RESET) {
         timerManager.reset(actionType)
     }

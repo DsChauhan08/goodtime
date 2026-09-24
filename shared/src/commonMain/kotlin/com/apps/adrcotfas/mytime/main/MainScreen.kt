@@ -55,6 +55,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
@@ -85,16 +86,20 @@ import com.apps.adrcotfas.mytime.platform.isFDroid
 import com.apps.adrcotfas.mytime.settings.permissions.getPermissionsState
 import com.apps.adrcotfas.mytime.settings.permissions.rememberAlarmPermissionRequester
 import com.apps.adrcotfas.mytime.settings.timerstyle.InitTimerStyle
+import androidx.compose.ui.backhandler.BackHandler
 import com.apps.adrcotfas.mytime.ui.ConfirmationDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mytime_productivity.shared.generated.resources.Res
 import mytime_productivity.shared.generated.resources.main_reset_break_budget
+import mytime_productivity.shared.generated.resources.main_strict_focus_exit_desc
+import mytime_productivity.shared.generated.resources.main_strict_focus_exit_title
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainScreen(
     navController: NavController,
@@ -215,6 +220,12 @@ fun MainScreen(
     var showNavigationSheet by rememberSaveable { mutableStateOf(false) }
     var showSelectLabelDialog by rememberSaveable { mutableStateOf(false) }
     var showResetBreakBudgetDialog by rememberSaveable { mutableStateOf(false) }
+    var showStrictExitDialog by rememberSaveable { mutableStateOf(false) }
+
+    val isStrictFocusActive = uiState.strictFocusMode && timerUiState.isActive && !timerUiState.isBreak
+    BackHandler(enabled = isStrictFocusActive) {
+        showStrictExitDialog = true
+    }
 
     val showTutorial = uiState.showTutorial
     val isPortrait = isPortrait()
@@ -379,6 +390,18 @@ fun MainScreen(
                 showResetBreakBudgetDialog = false
             },
             onDismiss = { showResetBreakBudgetDialog = false },
+        )
+    }
+
+    if (showStrictExitDialog) {
+        ConfirmationDialog(
+            title = stringResource(Res.string.main_strict_focus_exit_title),
+            subtitle = stringResource(Res.string.main_strict_focus_exit_desc),
+            onConfirm = {
+                showStrictExitDialog = false
+                viewModel.pauseTimer()
+            },
+            onDismiss = { showStrictExitDialog = false },
         )
     }
 

@@ -51,4 +51,7 @@
     <string name="main_crash_channel_name">Crash reports</string>
     <string name="main_crash_notification_title">App crashed</string>
     <string name="main_crash_notification_desc">Sorry for the inconvenience. Please send a report to the developer.</string>
+    <string name="main_strict_focus_exit_title">Strict Focus Active</string>
+    <string name="main_strict_focus_exit_desc">Leaving the app will pause your focus session. Are you sure you want to pause and leave?</string>
+    <string name="main_strict_focus_paused_banner">Paused: Strict Mode</string>
 </resources>
