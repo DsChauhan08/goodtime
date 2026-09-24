@@ -29,6 +29,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +53,7 @@ import compose.icons.evaicons.outline.Sync
 import mytime_productivity.shared.generated.resources.Res
 import mytime_productivity.shared.generated.resources.backup_and_restore_title
 import mytime_productivity.shared.generated.resources.labels_title
+import mytime_productivity.shared.generated.resources.plan_title
 import mytime_productivity.shared.generated.resources.product_name_long
 import mytime_productivity.shared.generated.resources.settings_title
 import mytime_productivity.shared.generated.resources.stats_title
@@ -89,6 +91,10 @@ fun MainNavigationSheet(
                 navController.navigate(StatsDest)
                 onHideSheet()
             },
+            navigateToPlan = {
+                navController.navigate(PlanDest)
+                onHideSheet()
+            },
             navigateToSettings = {
                 navController.navigate(SettingsDest)
                 onHideSheet()
@@ -109,6 +115,7 @@ fun MainNavigationSheetContent(
     wasNotificationPermissionDenied: Boolean,
     onNotificationPermissionGranted: (Boolean) -> Unit,
     navigateToLabels: () -> Unit,
+    navigateToPlan: () -> Unit,
     navigateToStats: () -> Unit,
     navigateToSettings: () -> Unit,
     navigateToBackup: () -> Unit,
@@ -146,6 +153,17 @@ fun MainNavigationSheetContent(
                 )
             },
             onClick = navigateToLabels,
+        )
+
+        IconTextButton(
+            title = stringResource(Res.string.plan_title),
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.CalendarMonth,
+                    contentDescription = stringResource(Res.string.plan_title),
+                )
+            },
+            onClick = navigateToPlan,
         )
 
         IconTextButton(

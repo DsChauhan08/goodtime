@@ -38,12 +38,14 @@ import com.apps.adrcotfas.mytime.main.MainScreen
 import com.apps.adrcotfas.mytime.main.MainViewModel
 import com.apps.adrcotfas.mytime.main.NotificationSettingsDest
 import com.apps.adrcotfas.mytime.main.OnboardingDest
+import com.apps.adrcotfas.mytime.main.PlanDest
 import com.apps.adrcotfas.mytime.main.ProDest
 import com.apps.adrcotfas.mytime.main.SettingsDest
 import com.apps.adrcotfas.mytime.main.StatsDest
 import com.apps.adrcotfas.mytime.main.TimerDurationsDest
 import com.apps.adrcotfas.mytime.main.UserInterfaceDest
 import com.apps.adrcotfas.mytime.onboarding.OnboardingScreen
+import com.apps.adrcotfas.mytime.plan.PlanningScreen
 import com.apps.adrcotfas.mytime.settings.SettingsScreen
 import com.apps.adrcotfas.mytime.settings.about.AboutScreen
 import com.apps.adrcotfas.mytime.settings.about.AcknowledgementsScreen
@@ -101,6 +103,14 @@ fun NavGraphBuilder.mytimeNavGraph(
     composable<StatsDest> {
         StatisticsScreen(
             onNavigateBack = navController::popBackStack2,
+        )
+    }
+    composable<PlanDest> {
+        PlanningScreen(
+            onNavigateBack = navController::popBackStack2,
+            onStartFocus = {
+                navController.popBackStack(MainDest, inclusive = false)
+            },
         )
     }
     composable<SettingsDest> {

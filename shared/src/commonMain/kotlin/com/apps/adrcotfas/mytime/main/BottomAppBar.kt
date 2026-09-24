@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +56,7 @@ import compose.icons.evaicons.outline.Menu2
 import mytime_productivity.shared.generated.resources.Res
 import mytime_productivity.shared.generated.resources.labels_title
 import mytime_productivity.shared.generated.resources.main_open_app_menu
+import mytime_productivity.shared.generated.resources.plan_title
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -123,6 +125,16 @@ fun BottomAppBar(
                         showIcon = true,
                     ) { onNavigateToSelectLabelDialog() }
                 }
+            }
+            IconButton(onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                navController.navigate(PlanDest)
+            }) {
+                Icon(
+                    imageVector = Icons.Outlined.CalendarMonth,
+                    contentDescription = stringResource(Res.string.plan_title),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
             }
             IconButton(onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
