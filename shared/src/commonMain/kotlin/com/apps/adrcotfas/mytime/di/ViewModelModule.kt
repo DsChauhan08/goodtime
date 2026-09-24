@@ -22,6 +22,7 @@ import com.apps.adrcotfas.mytime.labels.main.LabelsViewModel
 import com.apps.adrcotfas.mytime.main.MainViewModel
 import com.apps.adrcotfas.mytime.main.TimerViewModel
 import com.apps.adrcotfas.mytime.main.finishedsession.FinishedSessionViewModel
+import com.apps.adrcotfas.mytime.plan.PlanningViewModel
 import com.apps.adrcotfas.mytime.settings.SettingsViewModel
 import com.apps.adrcotfas.mytime.settings.TimerProfileViewModel
 import com.apps.adrcotfas.mytime.settings.about.AboutViewModel
@@ -39,6 +40,7 @@ val viewModelModule: Module =
         viewModelOf(::FinishedSessionViewModel)
         viewModelOf(::LabelsViewModel)
         viewModelOf(::AddEditLabelViewModel)
+        viewModelOf(::PlanningViewModel)
         viewModelOf(::SettingsViewModel)
         viewModelOf(::TimerProfileViewModel)
         viewModelOf(::AboutViewModel)
