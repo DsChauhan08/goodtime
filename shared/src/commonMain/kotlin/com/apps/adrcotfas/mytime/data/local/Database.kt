@@ -25,8 +25,8 @@ import androidx.sqlite.SQLiteDriver
 import com.apps.adrcotfas.mytime.data.local.migrations.MIGRATIONS
 
 @Database(
-    entities = [LocalLabel::class, LocalSession::class, LocalTimerProfile::class],
-    version = 9,
+    entities = [LocalLabel::class, LocalSession::class, LocalTimerProfile::class, LocalPlannedTask::class],
+    version = 10,
     exportSchema = true,
 )
 @ConstructedBy(ProductivityDatabaseConstructor::class)
@@ -36,6 +36,8 @@ abstract class ProductivityDatabase : RoomDatabase() {
     abstract fun sessionsDao(): SessionDao
 
     abstract fun timerProfileDao(): TimerProfileDao
+
+    abstract fun plannedTasksDao(): PlannedTasksDao
 }
 
 // The Room compiler generates the `actual` implementations.
