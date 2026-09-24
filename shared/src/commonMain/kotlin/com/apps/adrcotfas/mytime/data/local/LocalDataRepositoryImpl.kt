@@ -19,6 +19,7 @@ package com.apps.adrcotfas.mytime.data.local
 
 import androidx.paging.PagingSource
 import com.apps.adrcotfas.mytime.data.model.Label
+import com.apps.adrcotfas.mytime.data.model.PlannedTask
 import com.apps.adrcotfas.mytime.data.model.Session
 import com.apps.adrcotfas.mytime.data.model.TimerProfile
 import com.apps.adrcotfas.mytime.data.model.toExternal
@@ -37,6 +38,7 @@ internal class LocalDataRepositoryImpl(
     sessionDao: SessionDao,
     labelDao: LabelDao,
     timerProfileDao: TimerProfileDao,
+    plannedTasksDao: PlannedTasksDao? = null,
     private val settingsRepo: SettingsRepository,
     private val coroutineScope: CoroutineScope,
 ) : LocalDataRepository {
@@ -44,23 +46,25 @@ internal class LocalDataRepositoryImpl(
         val sessionDao: SessionDao,
         val labelDao: LabelDao,
         val timerProfileDao: TimerProfileDao,
+        val plannedTasksDao: PlannedTasksDao?,
     )
 
     // All flow-returning methods route through this via flatMapLatest so that live
     // collectors (TimerManager, ViewModels) transparently switch to the new database
     // after a backup restore (see reopen).
-    private val daos = MutableStateFlow(Daos(sessionDao, labelDao, timerProfileDao))
+    private val daos = MutableStateFlow(Daos(sessionDao, labelDao, timerProfileDao, plannedTasksDao))
 
     private val sessionDao get() = daos.value.sessionDao
     private val labelDao get() = daos.value.labelDao
     private val timerProfileDao get() = daos.value.timerProfileDao
+    private val plannedTasksDao get() = daos.value.plannedTasksDao
 
     init {
         insertDefaultLabel()
     }
 
     override fun reopen(database: ProductivityDatabase) {
-        daos.value = Daos(database.sessionsDao(), database.labelsDao(), database.timerProfileDao())
+        daos.value = Daos(database.sessionsDao(), database.labelsDao(), database.timerProfileDao(), database.plannedTasksDao())
         insertDefaultLabel()
     }
 
@@ -325,4 +329,48 @@ internal class LocalDataRepositoryImpl(
                 it.toExternal()
             }
         }
+
+    override fun selectPlannedTasksForDay(dayEpoch: Long): Flow<List<PlannedTask>> =
+        daos.flatMapLatest { daoHolder ->
+            val pDao = daoHolder.plannedTasksDao ?: return@flatMapLatest flowOf(emptyList())
+            pDao.selectTasksForDay(dayEpoch).flatMapLatest { tasks ->
+                selectAllLabels().map { labels ->
+                    val labelColorMap = labels.associate { it.name to it.colorIndex }
+                    tasks.map { task ->
+                        task.toExternal(colorIndex = labelColorMap[task.labelName] ?: Label.DEFAULT_LABEL_COLOR_INDEX)
+                    }
+                }
+            }
+        }
+
+    override fun selectPlannedTasksForRange(startDayEpoch: Long, endDayEpoch: Long): Flow<List<PlannedTask>> =
+        daos.flatMapLatest { daoHolder ->
+            val pDao = daoHolder.plannedTasksDao ?: return@flatMapLatest flowOf(emptyList())
+            pDao.selectTasksForRange(startDayEpoch, endDayEpoch).flatMapLatest { tasks ->
+                selectAllLabels().map { labels ->
+                    val labelColorMap = labels.associate { it.name to it.colorIndex }
+                    tasks.map { task ->
+                        task.toExternal(colorIndex = labelColorMap[task.labelName] ?: Label.DEFAULT_LABEL_COLOR_INDEX)
+                    }
+                }
+            }
+        }
+
+    override suspend fun insertPlannedTask(task: PlannedTask): Long =
+        plannedTasksDao?.insert(task.toLocal()) ?: 0L
+
+    override suspend fun updatePlannedTask(task: PlannedTask) {
+        plannedTasksDao?.update(task.toLocal())
+    }
+
+    override suspend fun deletePlannedTask(id: Long) {
+        plannedTasksDao?.deleteById(id)
+    }
+
+    override suspend fun setPlannedTaskCompleted(id: Long, isCompleted: Boolean, linkedSessionId: Long?) {
+        plannedTasksDao?.setTaskCompleted(id, isCompleted, linkedSessionId)
+    }
+
+    override fun countUncompletedPlannedTasks(dayEpoch: Long): Flow<Int> =
+        daos.flatMapLatest { it.plannedTasksDao?.countUncompletedTasksForDay(dayEpoch) ?: flowOf(0) }
 }

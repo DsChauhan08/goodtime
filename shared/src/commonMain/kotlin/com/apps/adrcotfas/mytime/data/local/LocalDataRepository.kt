@@ -19,6 +19,7 @@ package com.apps.adrcotfas.mytime.data.local
 
 import androidx.paging.PagingSource
 import com.apps.adrcotfas.mytime.data.model.Label
+import com.apps.adrcotfas.mytime.data.model.PlannedTask
 import com.apps.adrcotfas.mytime.data.model.Session
 import com.apps.adrcotfas.mytime.data.model.TimerProfile
 import kotlinx.coroutines.flow.Flow
@@ -135,4 +136,18 @@ interface LocalDataRepository {
     suspend fun selectTimerProfile(name: String): Flow<TimerProfile?>
 
     suspend fun selectAllTimerProfiles(): Flow<List<TimerProfile>>
+
+    fun selectPlannedTasksForDay(dayEpoch: Long): Flow<List<PlannedTask>>
+
+    fun selectPlannedTasksForRange(startDayEpoch: Long, endDayEpoch: Long): Flow<List<PlannedTask>>
+
+    suspend fun insertPlannedTask(task: PlannedTask): Long
+
+    suspend fun updatePlannedTask(task: PlannedTask)
+
+    suspend fun deletePlannedTask(id: Long)
+
+    suspend fun setPlannedTaskCompleted(id: Long, isCompleted: Boolean, linkedSessionId: Long? = null)
+
+    fun countUncompletedPlannedTasks(dayEpoch: Long): Flow<Int>
 }
