@@ -84,9 +84,9 @@ fun coreModule(isDebug: Boolean) = module {
             get<ProductivityDatabase>().sessionsDao(),
             get<ProductivityDatabase>().labelsDao(),
             get<ProductivityDatabase>().timerProfileDao(),
-            get<ProductivityDatabase>().plannedTasksDao(),
             get<SettingsRepository>(),
             get<CoroutineScope>(named(IO_SCOPE)),
+            get<ProductivityDatabase>().plannedTasksDao(),
         )
     }
     single<TimeProvider> {

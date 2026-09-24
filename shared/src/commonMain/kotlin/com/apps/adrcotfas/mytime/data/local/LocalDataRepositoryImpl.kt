@@ -38,9 +38,9 @@ internal class LocalDataRepositoryImpl(
     sessionDao: SessionDao,
     labelDao: LabelDao,
     timerProfileDao: TimerProfileDao,
-    plannedTasksDao: PlannedTasksDao? = null,
     private val settingsRepo: SettingsRepository,
     private val coroutineScope: CoroutineScope,
+    plannedTasksDao: PlannedTasksDao? = null,
 ) : LocalDataRepository {
     private data class Daos(
         val sessionDao: SessionDao,
