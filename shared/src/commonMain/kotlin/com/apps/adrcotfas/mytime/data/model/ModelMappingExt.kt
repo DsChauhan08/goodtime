@@ -18,6 +18,7 @@
 package com.apps.adrcotfas.mytime.data.model
 
 import com.apps.adrcotfas.mytime.data.local.LocalLabel
+import com.apps.adrcotfas.mytime.data.local.LocalPlannedTask
 import com.apps.adrcotfas.mytime.data.local.LocalSession
 import com.apps.adrcotfas.mytime.data.local.LocalTimerProfile
 
@@ -108,3 +109,34 @@ fun TimerProfile.toLocal(): LocalTimerProfile {
         workBreakRatio = workBreakRatio,
     )
 }
+
+fun PlannedTask.toLocal(): LocalPlannedTask = LocalPlannedTask(
+    id = id,
+    title = title,
+    labelName = labelName,
+    isArchived = false,
+    startTime = startTime,
+    endTime = endTime,
+    targetDurationMinutes = targetDurationMinutes,
+    dayEpoch = dayEpoch,
+    isCompleted = isCompleted,
+    linkedSessionId = linkedSessionId,
+    orderIndex = orderIndex,
+    notes = notes,
+)
+
+fun LocalPlannedTask.toExternal(colorIndex: Int = Label.DEFAULT_LABEL_COLOR_INDEX): PlannedTask = PlannedTask(
+    id = id,
+    title = title,
+    labelName = labelName,
+    colorIndex = colorIndex,
+    startTime = startTime,
+    endTime = endTime,
+    targetDurationMinutes = targetDurationMinutes,
+    dayEpoch = dayEpoch,
+    isCompleted = isCompleted,
+    linkedSessionId = linkedSessionId,
+    orderIndex = orderIndex,
+    notes = notes,
+)
+
